@@ -1,15 +1,15 @@
-package generators
+package arbitrary
 
 import "math/rand"
 
-type CharGenerator struct {
+type CharArbitrary struct {
 }
 
-func (g *CharGenerator) Generate() rune {
+func (g *CharArbitrary) Generate() rune {
 	runes := []rune("abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890ß?!\"§$%&/()=*~'#_-.:,;<>|°^")
 	return runes[rand.Intn(len(runes))]
 }
 
-func NewCharGenerator() *CharGenerator {
-	return &CharGenerator{}
+func NewCharArbitrary() *CharArbitrary {
+	return &CharArbitrary{}
 }

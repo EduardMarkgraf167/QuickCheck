@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/EduardMarkgraf167/QuickCheck/generators"
+	"github.com/EduardMarkgraf167/QuickCheck/arbitrary"
 )
 
 func main() {
@@ -15,11 +15,11 @@ func main() {
 
 func quickCheckCountMyString() {
 	fmt.Println("prop1_myString")
-	QuickCheckVerbose[string](generators.NewStringGenerator(QcStringSize), prop1MyString)
+	QuickCheckVerbose[string](arbitrary.NewStringArbitrary(QcStringSize), prop1MyString)
 	fmt.Println("prop2_myString")
-	QuickCheckVerbose[string](generators.NewStringGenerator(QcStringSize), prop2MyString)
+	QuickCheckVerbose[string](arbitrary.NewStringArbitrary(QcStringSize), prop2MyString)
 	fmt.Println("prop3_myString")
-	QuickCheckVerbose[string](generators.NewStringGenerator(QcStringSize), prop3MyString)
+	QuickCheckVerbose[string](arbitrary.NewStringArbitrary(QcStringSize), prop3MyString)
 }
 
 func prop1MyString(myString string) bool {
