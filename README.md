@@ -12,7 +12,20 @@ Im Standardpaket "testing/quick" der Go-Standardbibliothek ist eine QuickCheck-I
 Hier gibt es folgende öffentlich Funktionen:
 
 ### func Check(f any, config *Config) error
-Sucht nach einem Eingabewert für f (Funktion die bool zurückgibt), sodass f false zurückgibt. Wird ein solcher Wert gefunden, so wird ein CheckError zurückgegeben
+Die Funktion f ist eine Funktion, die einen boolschen Wert als Rückgabetyp enthält. Die Funktion f wird mit verschiedenen zufälligen Eingabewerten ausgeführt, bis entweder das Limit für die Versuche erreicht wird oder f false zurückgibt.
+#### Beispiel
+```golang
+  func TestOddMultipleOfThree(t *testing.T) {
+    f := func(x int) bool {
+      y := OddMultipleOfThree(x)
+      return y%2 == 1 && y%3 == 0
+    }
+    if err := quick.Check(f, nil); err != nil {
+      t.Error(err)
+    }
+  }
+´´´
+Im obigen Beispiel wird zuerst eine Funktion f definiert, die die zu testende Funktion "OddMultipleOfThree" aufruft und anschließend überprüft, ob der Rückgabewert ungerade und durch 3 teilbar ist. Diese wird mithilfe von quick.Check() überprüft und anschließend ein Fehler geworfen, falls die Überprüfung einen Eingabewert ergeben hat, der dazu führt, dass die zu prüfende Funktion "OddMultipleOfThree" die in f definierten Bedingungen nicht erfüllt.
 
 ### func CheckEqual(f, g any, config *Config) error
 Vergleicht zwei Funktionen f und g. Zufällige Eingabewerte werden generiert bis die Funktionen unterschiedliche Ergebnisse liefern. Ergebnis ist ein CheckEqualError
