@@ -24,7 +24,8 @@ Die Funktion f ist eine Funktion, die einen boolschen Wert als Rückgabetyp enth
       t.Error(err)
     }
   }
-´´´
+```
+
 Im obigen Beispiel wird zuerst eine Funktion f definiert, die die zu testende Funktion "OddMultipleOfThree" aufruft und anschließend überprüft, ob der Rückgabewert ungerade und durch 3 teilbar ist. Diese wird mithilfe von quick.Check() überprüft und anschließend ein Fehler geworfen, falls die Überprüfung einen Eingabewert ergeben hat, der dazu führt, dass die zu prüfende Funktion "OddMultipleOfThree" die in f definierten Bedingungen nicht erfüllt.
 
 ### func CheckEqual(f, g any, config *Config) error
