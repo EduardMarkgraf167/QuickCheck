@@ -27,6 +27,40 @@ func TestOddMultipleOfThree(t *testing.T) {
 ```
 
 Im obigen Beispiel wird zuerst eine Funktion f definiert, die die zu testende Funktion "OddMultipleOfThree" aufruft und anschließend überprüft, ob der Rückgabewert ungerade und durch 3 teilbar ist. Diese wird mithilfe von quick.Check() überprüft und anschließend ein Fehler geworfen, falls die Überprüfung einen Eingabewert ergeben hat, der dazu führt, dass die zu prüfende Funktion "OddMultipleOfThree" die in f definierten Bedingungen nicht erfüllt.
+#### Verwendung
+### func CheckEqual(f, g any, config *Config) error
+Vergleicht zwei Funktionen f und g. Zufällige Eingabewerte werden generiert bis die Funktionen unterschiedliche Ergebnisse liefern. Das Ergebnis ist ein CheckEqualError
+
+### func Value(t reflect.Type, rand *rand.Rand) (value reflect.Value, ok bool)
+Es wird ein zufälliges Element des übergebenen Typs zurückgegeben. Voraussetzung ist, dass t dem Generator-Interface genügt.
+
+### Errors
+Die "testing/quick" Implementierung definiert eine die Fehlertypen CheckEqualError und CheckError. Diese werden von den oben aufgelisteten Funktionen zurückgegeben, falls die Überprüfung fehlschlägt. Zudem gibt es einen SetupError, welcher dann geworfen wird, wenn eine fehlerhafte Bedienung der Funktionen stattfindet.
+
+### Config
+Eine Config-Struktur kann verwendet werden, um die Funktionen Check() und CheckEqual() zu konfigurieren. Hierbei können vier Optionen gesetzt werden.
+
+#### MaxCount
+MaxCount bestimmt, wieviele Iterationen in der Überprüfung durchlaufen werden, bis sie als erfolgreich gilt. Wird MaxCount auf 0 gesetzt, so wird stattdessen auf MaxCountScale zurückgegriffen.
+
+#### MaxCountScale
+MaxCountScale ist eine nicht-negative float-Zahl, die ein Vielfaches der Standardeinstellung für die maximalen Iterationen angibt. Dieses ist standardmäßig auf 100 gesetzt, kann aber mithilfe der Flag -quickchecks gesetzt werden.
+
+#### Rand
+Rand gibt einen Pool zufälliger Zahlen an. Ist Rand nil, so wird ein Pool pseudorandomisierter Zahlen generiert.
+
+#### Values
+Values spezifiziert eine Funktion zur Generierung einer Slice mit zufälligen Werten, welche zur zu testenden Funktion passen.
+
+### Generator
+Das Generator-Interface setzt folgende Funktion voraus:
+
+```golang
+Generate(rand *rand.Rand, size int) reflect.Value
+```
+
+Hierbei gibt Generate einen zufälligen Wert ebendieses Typs zurück, der das Generator-Interface implementiert.
+Der Parameter "size" wird als Hinweis auf die zu generierenden Werte genutzt. 
 
 #### Implementierung
 ```golang
@@ -186,40 +220,10 @@ func sizedValue(t reflect.Type, rand *rand.Rand, size int) (value reflect.Value,
 	return v, true
 }
 ```
-Hierbei lässt sich ein TypeSwitch erkenne, welcher basierend auf dem zu generierenden Typen eine entsprechende Arbitrary-Funktion auswählt, um einen zufälligen Wert des gesuchten Typs zu generieren.
+Hierbei lässt sich ein TypeSwitch erkennen, welcher basierend auf dem zu generierenden Typ eine entsprechende Arbitrary-Funktion auswählt, um einen zufälligen Wert des gesuchten Typs zu generieren. Interessant ist hier, dass auch komplexe Typen wie Structs, Arrays, Slices und Strings generiert werden können. Am interessantesten ist die implementierung für Strukturen, da sie beliebig aufgebaut sein können und verschiedene Typen beinhalten können. In Zeile 166 wird dieser Fall abgedeckt. 
+Zu Beginn wird die Menge der Felder der jeweiligen Struktur ermittelt und in n gespeichert. Anschließend wird der Wert für sizeLeft berechnet, welcher dazu genutzt wird, sizeValue rekursiv aufzurufen. Auf ähnliche Weise funktionieren auch die übrigen Komplex-Typen.
 
-### func CheckEqual(f, g any, config *Config) error
-Vergleicht zwei Funktionen f und g. Zufällige Eingabewerte werden generiert bis die Funktionen unterschiedliche Ergebnisse liefern. Das Ergebnis ist ein CheckEqualError
+### Fazit
+Bei der Implementierung von QuickCheck in Go wird der Generierungsprozess standardisiert und macht sich den Umstand zu Nutze, dass jeder übergebene Typ letztlich aus primitiven Typen aufgebaut ist. Hier ist der Nutzer auf die Implementierung angewiesen und muss sich an diese Anpassen.
 
-### func Value(t reflect.Type, rand *rand.Rand) (value reflect.Value, ok bool)
-Es wird ein zufälliges Element des übergebenen Typs zurückgegeben. Voraussetzung ist, dass t dem Generator-Interface genügt.
-
-### Errors
-Die "testing/quick" Implementierung definiert eine die Fehlertypen CheckEqualError und CheckError. Diese werden von den oben aufgelisteten Funktionen zurückgegeben, falls die Überprüfung fehlschlägt. Zudem gibt es einen SetupError, welcher dann geworfen wird, wenn eine fehlerhafte Bedienung der Funktionen stattfindet.
-
-### Config
-Eine Config-Struktur kann verwendet werden, um die Funktionen Check() und CheckEqual() zu konfigurieren. Hierbei können vier Optionen gesetzt werden.
-
-#### MaxCount
-MaxCount bestimmt, wieviele Iterationen in der Überprüfung durchlaufen werden, bis sie als erfolgreich gilt. Wird MaxCount auf 0 gesetzt, so wird stattdessen auf MaxCountScale zurückgegriffen.
-
-#### MaxCountScale
-MaxCountScale ist eine nicht-negative float-Zahl, die ein Vielfaches der Standardeinstellung für die maximalen Iterationen angibt. Dieses ist standardmäßig auf 100 gesetzt, kann aber mithilfe der Flag -quickchecks gesetzt werden.
-
-#### Rand
-Rand gibt einen Pool zufälliger Zahlen an. Ist Rand nil, so wird ein Pool pseudorandomisierter Zahlen generiert.
-
-#### Values
-Values spezifiziert eine Funktion zur Generierung einer Slice mit zufälligen Werten, welche zur zu testenden Funktion passen.
-
-### Generator
-Das Generator-Interface setzt folgende Funktion voraus:
-
-```golang
-Generate(rand *rand.Rand, size int) reflect.Value
-```
-
-Hierbei gibt Generate einen zufälligen Wert ebendieses Typs zurück, der das Generator-Interface implementiert.
-Der Parameter "size" wird als Hinweis auf die zu generierenden Werte genutzt. 
-
-Bei der Implementierung werden keine generischen Typen verwendet. Stattdessen wird der Typ als Parameter übergeben. Dieser wird durch Reflection zur Laufzeit ermittelt und durch ein übergreifendes Switch-Statement zu einer Arbitrary-Funktion zugeordnet.
+In der hier entwicketlen Version basiert QuickCheck darauf, dass Benutzer ihre eigenen Typen entwickeln können und die Funktionalität so nach Belieben erweitern können. Dies geht für einen Benutzer zwar mit einem gewissen Mehraufwand einher, bietet jedoch mehr Flexibilität. Die Standard-Implementierung erspart das eigene Implementierung des Nutzers, reduziert damit jedoch die Erweiterbarkeit und Flexibilität. 
