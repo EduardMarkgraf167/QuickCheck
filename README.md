@@ -27,6 +27,63 @@ func TestOddMultipleOfThree(t *testing.T) {
 ```
 
 Im obigen Beispiel wird zuerst eine Funktion f definiert, die die zu testende Funktion "OddMultipleOfThree" aufruft und anschließend überprüft, ob der Rückgabewert ungerade und durch 3 teilbar ist. Diese wird mithilfe von quick.Check() überprüft und anschließend ein Fehler geworfen, falls die Überprüfung einen Eingabewert ergeben hat, der dazu führt, dass die zu prüfende Funktion "OddMultipleOfThree" die in f definierten Bedingungen nicht erfüllt.
+
+```golang
+func OddMultipleOfThree(x int) int {
+  start := x * 3
+  cnt := 0
+  for {
+  	ret := start + 3*cnt
+  	if ret%2 == 1 {
+  		return ret
+  	}
+  	cnt += 1
+  }
+}
+```
+Im obigen Quellcode-Ausschnitt ist eine beispielhafte Implementierung von OddMultipleOfThree zu sehen. Sie nimmt einen ganzzahligen Wert als Parameter, multipliziert sie mit 3 und berechnet die weitere Dreierreihe bis eine ungerade Summe entsteht. Auf den ersten Blick scheint die beispielhafte Implementierung korrekt zu sein. Auf den zweiten Blick lässt sich leicht erkennen, dass der Rückgabewert der Funktion bei einem Aufruf mit 0 als Parameter die aufgestellte Bedingung nicht erfüllt. Durch den Einsatz von QuickCheck wird jedoch selbst wenn der Nullfall abgedeckt wurde kein erfolgreicher Durchlauf erzielt. Der Fehler könnte in etwa lauten: "failed on input 4601851300195147788". Hier lässt sich ein Fehler erkennen, der sonst wahrscheinlich nicht aufgefallen wäre. Wird ein hoher Integerwert mit 3 multiplizieren, so übersteigt er den maximalen Wert, den eine Integer-Variable speichern kann. Daher wird die Funktion angepasst:
+
+```golang
+func OddMultipleOfThree(x int) int {
+  if x == 0 || x > math.MaxInt / 3 {
+  	// Error handling
+  }
+  
+  start := x * 3
+  cnt := 0
+  for {
+  	ret := start + 3*cnt
+  	if ret%2 == 1 {
+  		return ret
+  	}
+  	cnt += 1
+  }
+}
+```
+Nun wird QuickCheck erneut eingesetzt und meldet immernoch einen Fehler. Dieser tritt für hohe negative Werte für x auf, wie z.B. -4576219449590091309. Also wird die Funktion erneut angepasst:
+
+```golang
+func OddMultipleOfThree(x int) int {
+  if x <= 0 && x > math.MaxInt / 3 {
+  	// Error handling
+  }
+  
+  start := x * 3
+  cnt := 0
+  for {
+  	ret := start + 3*cnt
+  	if ret%2 == 1 {
+  		return ret
+  	}
+  	cnt += 1
+  }
+}
+```
+
+Ein paar letzte Durchläufe mit QuickCheck zeigen keine weiteren Fehler an. Somit ist die Funktion vollständig.
+
+Eine weitere Möglichkeit die Sonderfälle abzufangen wäre es, die QuickCheck Property anzupassen. So könnte auch definiert werden, dass auch negative Zahlen angenommen werden. Hierfür müsste das Property angepasst werden und wie folgt lauten: y%2 != 0 && y%3 == 0. Ebenfalls wäre es möglich, die Sonderfälle in der Property-Definition abzufangen und zu überspringen. So kann das Property flexibel angepasst werden.
+
 #### Verwendung
 ### func CheckEqual(f, g any, config *Config) error
 Vergleicht zwei Funktionen f und g. Zufällige Eingabewerte werden generiert bis die Funktionen unterschiedliche Ergebnisse liefern. Das Ergebnis ist ein CheckEqualError
