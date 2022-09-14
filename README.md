@@ -6,10 +6,10 @@ Die QuickCheck-Implementierung in Haskell verwendet eine generische Arbitrary-Kl
 
 Um die generische QuickCheck-Funktion in Go zu implementieren, wird das Sprachfeature Generics in Go benutzt. An dieser Stelle tritt ein Problem auf, das dem Design der Sprache Go geschuldet ist. Go begrenzt Funktionsüberladungen auf den Receiver. Somit ist die Zuordnung der jeweiligen Arbitrary-Implementierung anders zu lösen. Hierfür wird der Ansatz aus der QuickCheck-Implementierung in C++ verwendet. So operieren die Arbitrary-Funktionen auf Proxy Receivern. Hier findet sich eine Art von AdHoc-Polymorphie. Das Arbitrary-Interface wird durch Duck-Typing von jeder Struktur implementiert, die eine Generate-Mehtode besitzt. Das Arbitrary-Interface ist ein generisches Interface, wobei der definierte Typen-Parameter den Rückgabetypen bestimmt. Folglich implementieren die einzelnen Arbitrary-Typen das Arbitrary-Interface eines bestimmten Typen, welcher durch den Rückgabetyp der zu implementierenden Generate-Methode bestimmt wird. Um nun die Zuordnung einer Arbitrary-Funktion wie in der C++-Implementierung umzusetzen, wird der QuickCheck-Funktion eine Arbitrary-Struktur übergeben. Hierbei muss die Arbitrary-Struktur das Arbitrary-Interface implementieren, das denselben Typenparameter besitzt, wie der Typenparameter der QuickCheck-Funktion. Somit ist sichergestellt, dass keine inkompatiblen Generator-Strukturen übergeben werden.
 
-## QuickCheck Implementierungen in Go
+## QuickCheck Implementierung in der Standard-Bibliothek von Go
 Im Standardpaket "testing/quick" der Go-Standardbibliothek ist eine QuickCheck-Implementierung enthalten. 
 
-Hier gibt es folgende öffentlich Funktionen:
+Hier gibt es folgende öffentliche Funktionen:
 
 ### func Check(f any, config *Config) error
 Die Funktion f ist eine Funktion, die einen boolschen Wert als Rückgabetyp enthält. Die Funktion f wird mit verschiedenen zufälligen Eingabewerten ausgeführt, bis entweder das Limit für die Versuche erreicht wird oder f false zurückgibt.
@@ -157,7 +157,17 @@ func Check(f any, config *Config) error {
 }
 ```
 Zu Beginn wird geprüft, ob eine Konfiguration übergeben wurde. Falls nicht wird auf die Standardkonfiguration zurückgegriffen. Anschließend wird die übergebene Funktion f überprüft und mithilfe von Reflection durch die Funktion "functionAndType" der Typ der Funktione ermittelt. Die Überprüfung wird in der Variable "ok" gespeichert und stellt sicher, dass der übergebene Pointer auf eine Funktion zeigt. Des Weiteren wird geprüft, dass die übergebene Funktion nur einen Rückgabewert hat und dieser den Typ Boolean hat.
-
+```golang
+func functionAndType(f any) (v reflect.Value, t reflect.Type, ok bool) {
+	v = reflect.ValueOf(f)
+	ok = v.Kind() == reflect.Func
+	if !ok {
+		return
+	}
+	t = v.Type()
+	return
+}
+```
 Wenn mit den Eingabeparametern alles in Ordnung ist wird die Funktion initialisiert. Hierbei wird eine Slice erstellt, die die Argumente der zu prüfenden Funktion darstellt. Der Zufallsgenerator wird aus der Konfiguration entnommen, ebenso wie der maxCount-Wert.
 
 In der Überprüfungsphase werden die Argumente mithilfe der Funktion "arbitraryValues" zufällig generiert und die übergebene Funktion damit geprüft. Gibt diese False zurück, so bricht die Funktion ab und wirft einen CheckError.
@@ -277,10 +287,15 @@ func sizedValue(t reflect.Type, rand *rand.Rand, size int) (value reflect.Value,
 	return v, true
 }
 ```
-Hierbei lässt sich ein TypeSwitch erkennen, welcher basierend auf dem zu generierenden Typ eine entsprechende Arbitrary-Funktion auswählt, um einen zufälligen Wert des gesuchten Typs zu generieren. Interessant ist hier, dass auch komplexe Typen wie Structs, Arrays, Slices und Strings generiert werden können. Am interessantesten ist die implementierung für Strukturen, da sie beliebig aufgebaut sein können und verschiedene Typen beinhalten können. In Zeile 166 wird dieser Fall abgedeckt. 
+``golang
+func Value(t reflect.Type, rand *rand.Rand) (value reflect.Value, ok bool) {
+	return sizedValue(t, rand, complexSize)
+}
+```
+Hierbei lässt sich ein TypeSwitch erkennen, welcher basierend auf dem zu generierenden Typ eine entsprechende Arbitrary-Funktion auswählt, um einen zufälligen Wert des gesuchten Typs zu generieren. Interessant ist hier, dass auch komplexe Typen wie Structs, Arrays, Slices und Strings generiert werden können. Am interessantesten ist die implementierung für Strukturen, da sie beliebig aufgebaut sein und verschiedene Typen beinhalten können. In Zeile 166 wird dieser Fall abgedeckt. 
 Zu Beginn wird die Menge der Felder der jeweiligen Struktur ermittelt und in n gespeichert. Anschließend wird der Wert für sizeLeft berechnet, welcher dazu genutzt wird, sizeValue rekursiv aufzurufen. Auf ähnliche Weise funktionieren auch die übrigen Komplex-Typen.
 
 ### Fazit
 Bei der Implementierung von QuickCheck in Go wird der Generierungsprozess standardisiert und macht sich den Umstand zu Nutze, dass jeder übergebene Typ letztlich aus primitiven Typen aufgebaut ist. Hier ist der Nutzer auf die Implementierung angewiesen und muss sich an diese Anpassen.
 
-In der hier entwicketlen Version basiert QuickCheck darauf, dass Benutzer ihre eigenen Typen entwickeln können und die Funktionalität so nach Belieben erweitern können. Dies geht für einen Benutzer zwar mit einem gewissen Mehraufwand einher, bietet jedoch mehr Flexibilität. Die Standard-Implementierung erspart das eigene Implementierung des Nutzers, reduziert damit jedoch die Erweiterbarkeit und Flexibilität. 
+In der hier entwickelten Version basiert QuickCheck darauf, dass Benutzer ihre eigenen Typen entwickeln können und die Funktionalität so nach Belieben erweitern können. Dies geht für einen Benutzer zwar mit einem gewissen Mehraufwand einher, bietet jedoch mehr Flexibilität. Die Standard-Implementierung erspart das eigene Implementieren des Nutzers, reduziert damit jedoch die Erweiterbarkeit und Flexibilität. 
