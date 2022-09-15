@@ -287,7 +287,7 @@ func sizedValue(t reflect.Type, rand *rand.Rand, size int) (value reflect.Value,
 	return v, true
 }
 ```
-``golang
+```golang
 func Value(t reflect.Type, rand *rand.Rand) (value reflect.Value, ok bool) {
 	return sizedValue(t, rand, complexSize)
 }
@@ -296,6 +296,6 @@ Hierbei lässt sich ein TypeSwitch erkennen, welcher basierend auf dem zu generi
 Zu Beginn wird die Menge der Felder der jeweiligen Struktur ermittelt und in n gespeichert. Anschließend wird der Wert für sizeLeft berechnet, welcher dazu genutzt wird, sizeValue rekursiv aufzurufen. Auf ähnliche Weise funktionieren auch die übrigen Komplex-Typen.
 
 ### Fazit
-Bei der Implementierung von QuickCheck in Go wird der Generierungsprozess standardisiert und macht sich den Umstand zu Nutze, dass jeder übergebene Typ letztlich aus primitiven Typen aufgebaut ist. Hier ist der Nutzer auf die Implementierung angewiesen und muss sich an diese Anpassen.
+Bei der Implementierung von QuickCheck in Go wird der Generierungsprozess standardisiert und macht sich den Umstand zu Nutze, dass jeder übergebene Typ letztlich aus primitiven Typen aufgebaut ist. Dies führt jedoch auch dazu, dass alle Strukturen gleich behandlet werden. Dies mindert den Aufwand für einen Benutzer, da keine eigene Implementierung bereitgestellt werden muss, nimmt ihm jedoch die Flexibilität, die Generierung anzupassen. Hier ist der Nutzer auf die Implementierung angewiesen und muss sich an diese Anpassen. Beispielhaft kann eine rekursive Struktur, wie etwa ein binärer Baum in Betracht gezogen werden. So kann eine Funktion für verschiedene Bäume mit beispielsweise insgesamt 10 Knoten implementiert sein. Die Implementierung der Standardbibliothek wäre lediglich in der Lage einen gleichmäßig verteilten, balancierten Baum trivial zu generieren. Soll ein unbalancierter Baum generiert werden, so müssten die Knoten separat Generiert werden und anschließend manuell zusammengebaut werden. Dies wäre wenig elegant.
 
-In der hier entwickelten Version basiert QuickCheck darauf, dass Benutzer ihre eigenen Typen entwickeln können und die Funktionalität so nach Belieben erweitern können. Dies geht für einen Benutzer zwar mit einem gewissen Mehraufwand einher, bietet jedoch mehr Flexibilität. Die Standard-Implementierung erspart das eigene Implementieren des Nutzers, reduziert damit jedoch die Erweiterbarkeit und Flexibilität. 
+In der hier entwickelten Version basiert QuickCheck darauf, dass Benutzer ihre eigenen Typen entwickeln und die Funktionalität so nach Belieben erweitern können. Dies geht für einen Benutzer zwar mit einem gewissen Mehraufwand einher, bietet jedoch mehr Flexibilität. So kann das obige Beispiel (Generierung eines unbalancierten binären Baums) durch eine eigene Arbitrary-Instanz implementiert werden und somit so verwendet werden, wie jede andere Arbitrary-Instanz.
